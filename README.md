@@ -1,20 +1,17 @@
-<<<<<<< HEAD
-# React + Vite
+AI MENTALHEALTH COMPANION
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+LOGIN PAGE
 
-Currently, two official plugins are available:
+<img width="1167" height="779" alt="Image" src="https://github.com/user-attachments/assets/e2de5040-6da2-4243-84e6-47b38d650332" />
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+HOME PAGE
 
-## React Compiler
+<img width="1689" height="785" alt="Image" src="https://github.com/user-attachments/assets/9554b4ba-191e-4e59-9996-87f449c21dac" />
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+AI CHAT FEATURE
 
-## Expanding the ESLint configuration
+<img width="1617" height="725" alt="Image" src="https://github.com/user-attachments/assets/ad5c453e-dad1-498f-9859-463d50ca246b" />
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
-=======
-# aichatbot-mentalhealth
->>>>>>> 8aa4e51fdd0d739a0ea3129808fd711e6cf86d5d
+CONNECT COUNSILORS
+
+<img width="1737" height="659" alt="Image" src="https://github.com/user-attachments/assets/026a9a74-8172-4616-983f-2171db30583f" />
