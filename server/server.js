@@ -7,8 +7,22 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'https://aichatbot-mindcare.vercel.app',
+  'https://aichatbot-mentalcare.vercel.app',
+  'https://aichatbot-mentalhealth-1.onrender.com',
+];
+
 app.use(cors({
-  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://*.vercel.app', 'https://*.vercel.app/'],
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true); // allow server-to-server or same-origin requests
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    }
+    callback(new Error('Not allowed by CORS'));
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '100kb' })); // Allows the app to parse JSON from client requests
