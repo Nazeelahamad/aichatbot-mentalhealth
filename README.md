@@ -2,6 +2,9 @@
 
 MindCare is a React and Express mental-wellness prototype with AI chat, mood check-ins, guided breathing, journaling, and counselor-demo screens.
 
+Deployed in (front end : vercel and backend render):
+https://aichatbot-mindcare-db7k2x80a-vibecoders5.vercel.app/
+
 ## Run locally
 
 1. Install frontend packages with `npm install`.
