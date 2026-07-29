@@ -9,6 +9,7 @@ import Counselor from './Counselor';
 import GuidedBreathing from './GuidedBreathing';
 import JournalingModal from './JournalingModal';
 import Journal from './Journal';
+import { getApiUrl } from '../utils/api';
 
 // Enhanced Color System
 const theme = {
@@ -134,7 +135,7 @@ export default function EnhancedMentalHealthUI() {
     if (!token) return Promise.resolve();
 
     const save = async () => {
-      const response = await fetch('/api/data/save', {
+      const response = await fetch(getApiUrl('/api/data/save'), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -161,7 +162,7 @@ export default function EnhancedMentalHealthUI() {
     setIsConnecting(true);
 
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(getApiUrl('/api/auth/me'), {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -238,7 +239,7 @@ export default function EnhancedMentalHealthUI() {
     
     setIsConnecting(true); 
 
-    const endpoint = `/api/auth/${action}`;
+    const endpoint = getApiUrl(`/api/auth/${action}`);
     
     if (action === 'continue') {
         await loadSession();
@@ -342,7 +343,7 @@ export default function EnhancedMentalHealthUI() {
 
     setIsSavingJournal(true);
     try {
-      const response = await fetch('/api/data/journal', {
+      const response = await fetch(getApiUrl('/api/data/journal'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -371,7 +372,7 @@ export default function EnhancedMentalHealthUI() {
     if (!token || !window.confirm('Delete this journal entry? This cannot be undone.')) return;
 
     try {
-      const response = await fetch(`/api/data/journal/${entryId}`, {
+      const response = await fetch(getApiUrl(`/api/data/journal/${entryId}`), {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

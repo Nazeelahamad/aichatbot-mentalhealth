@@ -1,5 +1,6 @@
 import { useRef, useEffect, useState } from 'react';
 import { Send, Mic, MicOff } from 'lucide-react';
+import { getApiUrl } from '../utils/api';
 
 export default function Chat({ messages, onAppendMessage }) {
   const [input, setInput] = useState('');
@@ -23,7 +24,7 @@ export default function Chat({ messages, onAppendMessage }) {
     const userToken = localStorage.getItem('authToken');
 
     try {
-      const response = await fetch('/api/chat/ai_response', {
+      const response = await fetch(getApiUrl('/api/chat/ai_response'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

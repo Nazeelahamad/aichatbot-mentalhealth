@@ -7,7 +7,10 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
-app.use(cors({ origin: 'http://localhost:5173' })); // Allow your Vite frontend to connect
+app.use(cors({
+  origin: ['http://localhost:5173', 'http://localhost:3000', 'https://*.vercel.app', 'https://*.vercel.app/'],
+  credentials: true
+}));
 app.use(express.json({ limit: '100kb' })); // Allows the app to parse JSON from client requests
 
 // Database Connection
