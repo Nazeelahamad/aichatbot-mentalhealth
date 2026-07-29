@@ -1,6 +1,6 @@
 // src/components/Goals.jsx
-import React, { useState } from 'react';
-import { Target, Plus, CheckCircle, Clock } from 'lucide-react';
+import { useState } from 'react';
+import { Target, Plus } from 'lucide-react';
 
 export default function Goals({ goals = [], onAddGoal, onToggleGoal }) {
   const [newGoal, setNewGoal] = useState('');

@@ -1,5 +1,5 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
-import { MessageCircle, Activity, Heart, Users, Sun, Moon, Menu, X, Send, Mic, Calendar, TrendingUp, Clock, Sparkles, LogOut } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { MessageCircle, Activity, Heart, Users, Moon, LogOut, Sparkles, Clock, Sun, Menu, X, TrendingUp, BookOpen } from 'lucide-react';
 
 // Import your existing components
 import Login from './Login';
@@ -8,6 +8,7 @@ import Exercises from './Exercises';
 import Counselor from './Counselor';
 import GuidedBreathing from './GuidedBreathing';
 import JournalingModal from './JournalingModal';
+import Journal from './Journal';
 
 // Enhanced Color System
 const theme = {
@@ -39,6 +40,9 @@ const theme = {
 const getAuthToken = () => localStorage.getItem('authToken');
 const setAuthToken = (token) => localStorage.setItem('authToken', token);
 const removeAuthToken = () => localStorage.removeItem('authToken');
+const getStoredUserName = () => localStorage.getItem('userName');
+const setStoredUserName = (name) => localStorage.setItem('userName', name);
+const removeStoredUserName = () => localStorage.removeItem('userName');
 
 const getMoodScore = (mood) => {
   switch (mood) {
@@ -52,12 +56,25 @@ const getMoodScore = (mood) => {
   }
 };
 
+const getLocalDateKey = () => {
+  const date = new Date();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
+const formatMoodDate = (date) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) return date;
+  return new Intl.DateTimeFormat(undefined, { weekday: 'short' }).format(new Date(`${date}T00:00:00`));
+};
+
 export default function EnhancedMentalHealthUI() {
   // Authentication State (from your original app)
   const [authToken, setAuthTokenState] = useState(getAuthToken());
-  const [isLogged, setIsLogged] = useState(!!getAuthToken());
-  const [userName, setUserName] = useState('');
+  const [isLogged, setIsLogged] = useState(false);
+  const [userName, setUserName] = useState(getStoredUserName() || '');
   const [isConnecting, setIsConnecting] = useState(false);
+  const [sessionLoaded, setSessionLoaded] = useState(false);
   
   // App State
   const [dark, setDark] = useState(false);
@@ -67,7 +84,10 @@ export default function EnhancedMentalHealthUI() {
   const [activities, setActivities] = useState(0);
   const [currentMood, setCurrentMood] = useState('Not tracked');
   const [moodHistory, setMoodHistory] = useState([]);
+  const [journalEntries, setJournalEntries] = useState([]);
   const [isJournaling, setIsJournaling] = useState(false);
+  const [isSavingJournal, setIsSavingJournal] = useState(false);
+  const saveQueueRef = useRef(Promise.resolve());
   
   const t = dark ? theme.dark : theme.light;
 
@@ -109,30 +129,92 @@ export default function EnhancedMentalHealthUI() {
   ];
 
   // Save progress function (from your original app)
-  const saveProgress = useCallback(async (dataToSave) => {
+  const saveProgress = useCallback((dataToSave) => {
     const token = getAuthToken();
-    if (!token) return;
+    if (!token) return Promise.resolve();
 
-    try {
-        await fetch('/api/data/save', {
+    const save = async () => {
+      const response = await fetch('/api/data/save', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
                 'Authorization': `Bearer ${token}`
             },
             body: JSON.stringify(dataToSave),
-        });
+      });
+      if (!response.ok) throw new Error('Progress save failed');
+    };
+
+    const queuedSave = saveQueueRef.current.catch(() => undefined).then(save);
+    saveQueueRef.current = queuedSave;
+    queuedSave.catch((error) => console.error('Failed to save progress:', error));
+    return queuedSave;
+  }, []);
+
+  const loadSession = useCallback(async () => {
+    const token = getAuthToken();
+    if (!token) {
+      setSessionLoaded(true);
+      return;
+    }
+
+    setIsConnecting(true);
+
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        removeAuthToken();
+        removeStoredUserName();
+        setAuthTokenState(null);
+        setUserName('');
+        setIsLogged(false);
+        return;
+      }
+
+      const data = await response.json();
+      setUserName(data.userName);
+      setStoredUserName(data.userName);
+      setMessages(data.messages || []);
+      setActivities(data.activities || 0);
+      setCurrentMood(data.currentMood || 'Not tracked');
+      setMoodHistory(data.moodHistory || []);
+      setJournalEntries(data.journalEntries || []);
+      setIsLogged(true);
     } catch (error) {
-        console.error('Failed to save progress:', error);
+      console.error('Failed to load saved session:', error);
+      removeAuthToken();
+      removeStoredUserName();
+      setAuthTokenState(null);
+      setUserName('');
+      setIsLogged(false);
+    } finally {
+      setSessionLoaded(true);
+      setIsConnecting(false);
     }
   }, []);
 
-  // Effect to save progress
   useEffect(() => {
-    if (isLogged) {
-        saveProgress({ messages, activities, currentMood, moodHistory });
+    if (authToken) {
+      loadSession();
+    } else {
+      setSessionLoaded(true);
     }
-  }, [messages, activities, currentMood, moodHistory, isLogged, saveProgress]);
+  }, [authToken, loadSession]);
+
+  // Queue one debounced save at a time so older browser requests cannot overwrite newer progress.
+  useEffect(() => {
+    if (!isLogged || !sessionLoaded) return undefined;
+    const saveTimer = setTimeout(() => {
+      saveProgress({ messages, activities, currentMood, moodHistory });
+    }, 400);
+    return () => clearTimeout(saveTimer);
+  }, [messages, activities, currentMood, moodHistory, isLogged, saveProgress, sessionLoaded]);
 
   // Helper for adding messages
   const appendMessage = (m) => setMessages(prev => [...prev, m]);
@@ -141,6 +223,7 @@ export default function EnhancedMentalHealthUI() {
   const handleAuth = async (authName, password, action) => {
     if (action === 'logout') {
         removeAuthToken();
+        removeStoredUserName();
         setAuthTokenState(null)
         setIsLogged(false);
         setUserName('');
@@ -148,6 +231,8 @@ export default function EnhancedMentalHealthUI() {
         setActivities(0);
         setCurrentMood('Not tracked');
         setMoodHistory([]);
+        setJournalEntries([]);
+        setSessionLoaded(true);
         return;
     }
     
@@ -156,9 +241,7 @@ export default function EnhancedMentalHealthUI() {
     const endpoint = `/api/auth/${action}`;
     
     if (action === 'continue') {
-        alert("Session continued. This relies on the browser having the valid token.");
-        setIsLogged(true);
-        setUserName(authName);
+        await loadSession();
         setIsConnecting(false);
         return;
     }
@@ -175,14 +258,17 @@ export default function EnhancedMentalHealthUI() {
         if (response.ok) {
             setAuthTokenState(data.token);
             setAuthToken(data.token); 
+            setStoredUserName(data.userName);
             setUserName(data.userName);
             setActivities(data.activities);
-            setMessages(data.messages);
-            setCurrentMood(data.currentMood);
+            setMessages(data.messages || []);
+            setCurrentMood(data.currentMood || 'Not tracked');
             setMoodHistory(data.moodHistory || []);
+            setJournalEntries(data.journalEntries || []);
             setIsLogged(true);
+            setSessionLoaded(true);
             
-            if (data.messages.length === 0 && action !== 'continue') {
+            if ((data.messages?.length || 0) === 0 && action !== 'continue') {
               appendMessage({ sender: 'bot', text: `Welcome, ${data.userName}! I'm here to support you. How are you feeling today?`, timestamp: Date.now() });
             }
         } else {
@@ -198,19 +284,20 @@ export default function EnhancedMentalHealthUI() {
 
   // MOOD HANDLER (from your original app)
   const handleSetMood = (mood) => {
-    const today = new Date();
-    const dayName = today.toLocaleDateString('en-US', { weekday: 'short' });
+    const date = getLocalDateKey();
     const moodScore = getMoodScore(mood);
 
     const newEntry = {
-        date: dayName,
+        date,
         mood: mood,
         score: moodScore
     };
     
     setMoodHistory(prevHistory => {
-        const filteredHistory = prevHistory.filter(entry => entry.date !== dayName);
-        const updatedHistory = [...filteredHistory, newEntry].slice(-7);
+        const filteredHistory = prevHistory.filter(entry => entry.date !== date);
+        const updatedHistory = [...filteredHistory, newEntry]
+          .sort((first, second) => first.date.localeCompare(second.date))
+          .slice(-7);
         return updatedHistory;
     });
 
@@ -225,7 +312,6 @@ export default function EnhancedMentalHealthUI() {
     
     setActivities(a => {
         const newActivitiesCount = a + 1;
-        saveProgress({ messages, activities: newActivitiesCount, currentMood, moodHistory });
         return newActivitiesCount;
     });
     setView('chat');
@@ -243,7 +329,6 @@ export default function EnhancedMentalHealthUI() {
         appendMessage({ sender: 'bot', text: messageText, timestamp: Date.now(), isExercise: true });
         setActivities(a => {
             const newActivitiesCount = a + 1;
-            saveProgress({ messages, activities: newActivitiesCount, currentMood, moodHistory });
             return newActivitiesCount;
         });
         
@@ -251,21 +336,51 @@ export default function EnhancedMentalHealthUI() {
     }
   };
 
-  // JOURNAL HANDLER (from your original app)
-  const logJournalEntry = (entryText) => {
-    const entry = { text: `[Journal Entry] ${entryText}`, sender: 'user', timestamp: Date.now(), isJournalEntry: true };
-    appendMessage(entry);
-    
-    appendMessage({ sender: 'bot', text: "Your thoughts have been logged securely. Remember to keep journaling!", timestamp: Date.now() });
-    
-    setActivities(a => {
-        const newActivitiesCount = a + 1;
-        saveProgress({ messages, activities: newActivitiesCount, currentMood, moodHistory });
-        return newActivitiesCount;
-    });
+  const logJournalEntry = async (content) => {
+    const token = getAuthToken();
+    if (!token) return false;
 
-    setIsJournaling(false);
-    setView('chat'); 
+    setIsSavingJournal(true);
+    try {
+      const response = await fetch('/api/data/journal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ content })
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Journal save failed');
+
+      setJournalEntries((entries) => [data.entry, ...entries]);
+      setActivities((count) => count + 1);
+      setIsJournaling(false);
+      setView('journal');
+      return true;
+    } catch (error) {
+      console.error('Failed to save journal entry:', error);
+      return false;
+    } finally {
+      setIsSavingJournal(false);
+    }
+  };
+
+  const deleteJournalEntry = async (entryId) => {
+    const token = getAuthToken();
+    if (!token || !window.confirm('Delete this journal entry? This cannot be undone.')) return;
+
+    try {
+      const response = await fetch(`/api/data/journal/${entryId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (!response.ok) throw new Error('Journal delete failed');
+      setJournalEntries((entries) => entries.filter((entry) => entry._id !== entryId));
+    } catch (error) {
+      console.error('Failed to delete journal entry:', error);
+      alert('Could not delete this journal entry. Please try again.');
+    }
   };
 
   // Show login if not authenticated
@@ -305,6 +420,7 @@ export default function EnhancedMentalHealthUI() {
               {[
                 { id: 'dashboard', icon: Activity, label: 'Dashboard' },
                 { id: 'chat', icon: MessageCircle, label: 'Chat' },
+                { id: 'journal', icon: BookOpen, label: 'Journal' },
                 { id: 'exercises', icon: Sparkles, label: 'Exercises' },
                 { id: 'counselor', icon: Users, label: 'Connect' }
               ].map(item => (
@@ -353,8 +469,9 @@ export default function EnhancedMentalHealthUI() {
           <div className="md:hidden border-t border-gray-200 dark:border-gray-700 py-3 px-4 space-y-2">
             {[
               { id: 'dashboard', icon: Activity, label: 'Dashboard' },
-              { id: 'chat', icon: MessageCircle, label: 'Chat' },
-              { id: 'exercises', icon: Sparkles, label: 'Exercises' },
+                { id: 'chat', icon: MessageCircle, label: 'Chat' },
+                { id: 'journal', icon: BookOpen, label: 'Journal' },
+                { id: 'exercises', icon: Sparkles, label: 'Exercises' },
               { id: 'counselor', icon: Users, label: 'Connect' }
             ].map(item => (
               <button
@@ -428,8 +545,8 @@ export default function EnhancedMentalHealthUI() {
                     <Clock className="w-6 h-6 text-white" />
                   </div>
                 </div>
-                <h3 className={`text-3xl font-bold mb-1`}>7 days</h3>
-                <p className={`text-sm ${t.muted}`}>Daily Check-in</p>
+                <h3 className={`text-3xl font-bold mb-1`}>{moodHistory.length}/7</h3>
+                <p className={`text-sm ${t.muted}`}>Recent daily check-ins</p>
               </div>
             </div>
 
@@ -443,12 +560,15 @@ export default function EnhancedMentalHealthUI() {
               </div>
               <div className="flex items-end justify-between h-48 space-x-4">
                 {moodHistory.map((d, i) => (
-                  <div key={i} className="flex-1 flex flex-col items-center space-y-2">
-                    <div 
-                      className="w-full bg-gradient-to-t from-purple-500 to-pink-500 rounded-t-lg transition-all hover:scale-105 cursor-pointer"
-                      style={{ height: `${d.score * 10}%` }}
-                    />
-                    <span className={`text-xs font-medium ${t.muted}`}>{d.date}</span>
+                  <div key={i} className="flex-1 h-full min-w-0 flex flex-col items-center gap-2">
+                    <div className="relative flex-1 w-full">
+                      <div 
+                        className="absolute bottom-0 left-0 w-full bg-gradient-to-t from-purple-500 to-pink-500 rounded-t-lg transition-all hover:scale-105 cursor-pointer"
+                        style={{ height: `${d.score * 10}%` }}
+                        title={`${d.mood}: ${d.score}/10`}
+                      />
+                    </div>
+                    <span className={`text-xs font-medium ${t.muted}`}>{formatMoodDate(d.date)}</span>
                   </div>
                 ))}
               </div>
@@ -458,6 +578,14 @@ export default function EnhancedMentalHealthUI() {
 
         {/* Chat View - Use your existing Chat component */}
         {view === 'chat' && <Chat messages={messages} onAppendMessage={appendMessage} />}
+
+        {view === 'journal' && (
+          <Journal
+            entries={journalEntries}
+            onNewEntry={() => setIsJournaling(true)}
+            onDelete={deleteJournalEntry}
+          />
+        )}
 
         {/* Exercises View with enhanced design */}
         {view === 'exercises' && (
@@ -494,7 +622,13 @@ export default function EnhancedMentalHealthUI() {
       </main>
 
       {/* Journaling Modal - Use your existing modal */}
-      {isJournaling && <JournalingModal onSave={logJournalEntry} onClose={() => setIsJournaling(false)} />}
+      {isJournaling && (
+        <JournalingModal
+          onSave={logJournalEntry}
+          onClose={() => setIsJournaling(false)}
+          isSaving={isSavingJournal}
+        />
+      )}
 
       <style>{`
         @keyframes fadeIn {

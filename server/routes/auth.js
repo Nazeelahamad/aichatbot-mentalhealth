@@ -3,11 +3,16 @@ const router = express.Router();
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const auth = require('../middleware/auth');
 
 // @route   POST /api/auth/register
 // @desc    Register new user
 router.post('/register', async (req, res) => {
-    const { userName, password } = req.body;
+    const userName = typeof req.body.userName === 'string' ? req.body.userName.trim() : '';
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
+    if (!userName || userName.length > 50 || password.length < 8 || password.length > 128) {
+        return res.status(400).json({ message: 'Use a name up to 50 characters and a password between 8 and 128 characters.' });
+    }
     try {
         let user = await User.findOne({ userName });
         if (user) return res.status(400).json({ message: 'User already exists.' });
@@ -24,7 +29,15 @@ router.post('/register', async (req, res) => {
         const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, { expiresIn: '1h' });
         
         // Return token and initial user data
-        res.status(201).json({ token, userName: user.userName, messages: user.messages, activities: user.activities });
+        res.status(201).json({
+            token,
+            userName: user.userName,
+            messages: user.messages,
+            activities: user.activities,
+            currentMood: user.currentMood,
+            moodHistory: user.moodHistory,
+            journalEntries: user.journalEntries
+        });
 
     } catch (err) {
         console.error(err.message);
@@ -35,7 +48,9 @@ router.post('/register', async (req, res) => {
 // @route   POST /api/auth/login
 // @desc    Login user & get progress data
 router.post('/login', async (req, res) => {
-    const { userName, password } = req.body;
+    const userName = typeof req.body.userName === 'string' ? req.body.userName.trim() : '';
+    const password = typeof req.body.password === 'string' ? req.body.password : '';
+    if (!userName || !password) return res.status(400).json({ message: 'Username and password are required.' });
     try {
         const user = await User.findOne({ userName });
         if (!user) return res.status(400).json({ message: 'Invalid Credentials.' });
@@ -53,12 +68,35 @@ router.post('/login', async (req, res) => {
             userName: user.userName, 
             messages: user.messages, 
             activities: user.activities,
-            currentMood: user.currentMood 
+            currentMood: user.currentMood,
+            moodHistory: user.moodHistory,
+            journalEntries: user.journalEntries
         });
 
     } catch (err) {
         console.error(err.message);
         res.status(500).send('Server error');
+    }
+});
+
+// @route   GET /api/auth/me
+// @desc    Get current authenticated user data
+router.get('/me', auth, async (req, res) => {
+    try {
+        const user = await User.findById(req.user);
+        if (!user) return res.status(404).json({ message: 'User not found.' });
+
+        res.json({
+            userName: user.userName,
+            messages: user.messages,
+            activities: user.activities,
+            currentMood: user.currentMood,
+            moodHistory: user.moodHistory,
+            journalEntries: user.journalEntries
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).json({ message: 'Could not load user data.' });
     }
 });
 

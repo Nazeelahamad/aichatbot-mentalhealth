@@ -8,7 +8,7 @@ const PORT = process.env.PORT || 3000;
 
 // Middleware
 app.use(cors({ origin: 'http://localhost:5173' })); // Allow your Vite frontend to connect
-app.use(express.json()); // Allows the app to parse JSON from client requests
+app.use(express.json({ limit: '100kb' })); // Allows the app to parse JSON from client requests
 
 // Database Connection
 mongoose.connect(process.env.MONGO_URI)

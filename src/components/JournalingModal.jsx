@@ -1,15 +1,20 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { X, Save, BookOpen } from 'lucide-react';
 
-export default function JournalingModal({ onSave, onClose }) {
+export default function JournalingModal({ onSave, onClose, isSaving }) {
   const [entry, setEntry] = useState('');
+  const [error, setError] = useState('');
 
-  const handleSave = () => {
-    if (entry.trim()) {
-      onSave(entry);
-    } else {
-      onClose();
+  const handleSave = async () => {
+    const content = entry.trim();
+    if (!content) {
+      setError('Please write an entry before saving.');
+      return;
     }
+
+    setError('');
+    const result = await onSave(content);
+    if (!result) setError('Your entry could not be saved. Please try again.');
   };
 
   return (
@@ -37,6 +42,9 @@ export default function JournalingModal({ onSave, onClose }) {
             <p className="text-gray-600 text-sm mb-2">
               What made you smile today? What are you grateful for?
             </p>
+            <p className="text-xs text-gray-500 mb-3">
+              Entries are visible only in your signed-in account. Avoid including information you would not want stored.
+            </p>
             <textarea
               value={entry}
               onChange={(e) => setEntry(e.target.value)}
@@ -45,22 +53,25 @@ export default function JournalingModal({ onSave, onClose }) {
               className="w-full p-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none resize-none"
               autoFocus
             />
+            {error && <p className="text-sm text-red-600 mt-2" role="alert">{error}</p>}
           </div>
 
           {/* Actions */}
           <div className="flex items-center justify-end space-x-3">
             <button
               onClick={onClose}
+              disabled={isSaving}
               className="px-6 py-3 text-gray-600 hover:bg-gray-100 rounded-xl font-medium transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={handleSave}
+              disabled={isSaving}
               className="px-6 py-3 bg-gradient-to-r from-orange-500 to-red-500 text-white rounded-xl font-medium hover:from-orange-600 hover:to-red-600 transition-all flex items-center space-x-2"
             >
               <Save className="w-4 h-4" />
-              <span>Save Entry</span>
+              <span>{isSaving ? 'Saving...' : 'Save Entry'}</span>
             </button>
           </div>
         </div>

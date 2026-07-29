@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import { Send, Mic, MicOff } from 'lucide-react';
 
 export default function Chat({ messages, onAppendMessage }) {

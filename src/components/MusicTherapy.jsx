@@ -1,6 +1,6 @@
 // src/components/MusicTherapy.jsx
-import React, { useState } from 'react';
-import { Music, Play, Pause, SkipForward } from 'lucide-react';
+import { useState } from 'react';
+import { Music, Play, Pause } from 'lucide-react';
 
 const musicCategories = [
   { id: 'calm', name: 'Calming', color: 'from-blue-400 to-cyan-400' },
@@ -9,7 +9,7 @@ const musicCategories = [
   { id: 'sleep', name: 'Sleep', color: 'from-indigo-400 to-purple-400' },
 ];
 
-export default function MusicTherapy({ onComplete }) {
+export default function MusicTherapy() {
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
 

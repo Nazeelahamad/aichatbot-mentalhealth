@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { User, Lock, LogIn, UserPlus, ArrowRight } from 'lucide-react';
 
 export default function Login({ userName, setUserName, onAuth, currentSessionUser, isConnecting }) {

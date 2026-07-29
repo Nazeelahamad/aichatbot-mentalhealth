@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Exercises({ onStart }) {
   const items = [
     { id: 'breathing', title: 'Breathing', desc: 'Guided 4-7-8 breathing' },

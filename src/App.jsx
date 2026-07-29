@@ -1,4 +1,3 @@
-import React from 'react';
 import EnhancedMentalHealthUI from './components/EnhancedMentalHealthUI';
 import './index.css';
 

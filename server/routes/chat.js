@@ -1,22 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const { GoogleGenAI } = require('@google/genai');
+const auth = require('../middleware/auth');
 
 // Initialize the Gemini AI client
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Middleware to secure the chat route (same one used in data.js)
-const auth = (req, res, next) => {
-    // Note: In a real MERN app, you need to verify the JWT token here
-    // For simplicity, we'll assume authentication is checked in the main route file.
-    // Replace this with the actual JWT check middleware from server/routes/data.js
-    next(); 
-};
-
-
 // Define the core AI chat endpoint
 router.post('/ai_response', auth, async (req, res) => {
     const { message, history } = req.body;
+
+    if (typeof message !== 'string' || !message.trim() || message.length > 2000 || !Array.isArray(history)) {
+        return res.status(400).json({ message: 'Invalid chat request.' });
+    }
     
     // 1. Define the AI Persona and Goal
     const prompt = `You are an AI Mental Health Companion designed to support university students. 
@@ -37,7 +33,7 @@ router.post('/ai_response', auth, async (req, res) => {
             model: "gemini-2.5-flash", // A fast, capable model for chat
             contents: [
                 // Include chat history if you want context (history is optional but helpful)
-                ...history.map(msg => ({
+                ...history.slice(-5).filter(msg => typeof msg?.text === 'string').map(msg => ({
                     role: msg.sender === 'user' ? 'user' : 'model',
                     parts: [{ text: msg.text }]
                 })),

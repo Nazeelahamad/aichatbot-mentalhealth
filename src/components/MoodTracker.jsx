@@ -1,5 +1,3 @@
-import React from 'react';
-
 const moods = [
   { key: 'happy', icon: '😄' },
   { key: 'calm', icon: '😌' },

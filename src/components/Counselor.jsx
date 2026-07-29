@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Users, Phone, Clock, AlertTriangle } from 'lucide-react';
+import { useState } from 'react';
+import { Users, Phone, AlertTriangle } from 'lucide-react';
 
 export default function Counselor() {
   const [counselors, setCounselors] = useState([
@@ -43,7 +43,7 @@ export default function Counselor() {
           <Users className="w-8 h-8 text-blue-500" />
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Connect with a Counselor</h2>
-            <p className="text-gray-600">Professional support when you need it</p>
+          <p className="text-gray-600">Demo directory — this screen does not place a real call or booking.</p>
           </div>
         </div>
 
@@ -79,7 +79,7 @@ export default function Counselor() {
                   ) : (
                     <>
                       <Phone className="w-4 h-4" />
-                      <span>Connect</span>
+                      <span>Demo Connect</span>
                     </>
                   )}
                 </button>
@@ -95,11 +95,12 @@ export default function Counselor() {
           <AlertTriangle className="w-5 h-5 text-red-500 mt-0.5" />
           <div>
             <p className="text-sm font-medium text-red-800">
-              <strong>Crisis Support:</strong> If you're in danger or having an emergency, contact local emergency services immediately.
+              <strong>India crisis support:</strong> If you or someone else is in immediate danger, call 112. For mental-health support, contact Tele-MANAS.
             </p>
             <div className="mt-2 flex flex-wrap gap-2">
-              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Emergency: 911</span>
-              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Crisis Text Line: Text HOME to 741741</span>
+              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Emergency (India): 112</span>
+              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Tele-MANAS: 14416</span>
+              <span className="px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-medium">Tele-MANAS: 1800-89-14416</span>
             </div>
           </div>
         </div>

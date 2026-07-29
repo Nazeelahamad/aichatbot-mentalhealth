@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeft, Play, Pause } from 'lucide-react';
 
 // Define the breathing cycle steps and durations (in seconds)
@@ -54,8 +54,6 @@ export default function GuidedBreathing({ onComplete }) {
   };
 
   // Calculate total cycle duration for animation
-  const totalDuration = cycle.reduce((sum, s) => sum + s.duration, 0);
-  
   // Get animation scale based on current step
   const getAnimationScale = () => {
     switch (currentStep.text) {
@@ -194,7 +192,7 @@ export default function GuidedBreathing({ onComplete }) {
       </div>
 
       {/* Custom CSS for additional animations */}
-      <style jsx>{`
+      <style>{`
         @keyframes breathe {
           0% { transform: scale(1); }
           50% { transform: scale(1.2); }

@@ -1,14 +1,9 @@
 // src/components/Insights.jsx
-import React from 'react';
-import { TrendingUp, Calendar, Award, Target } from 'lucide-react';
+import { TrendingUp, Award } from 'lucide-react';
 
 export default function Insights({ moodHistory, activities, streakDays }) {
   const averageMood = moodHistory.length 
     ? (moodHistory.reduce((sum, m) => sum + m.score, 0) / moodHistory.length).toFixed(1)
-    : 0;
-  
-  const moodTrend = moodHistory.length > 1 
-    ? moodHistory[moodHistory.length - 1].score - moodHistory[0].score
     : 0;
 
   const achievements = [
